@@ -76,25 +76,25 @@ void loop() {
     if (flagRecv) {
         flagRecv = false; // フラグクリア
 
-    // 割り込み原因を確認してデータを読み出す
-    while (CAN0.checkReceive() == CAN_MSGAVAIL) {
-        long unsigned int rxId;
-        unsigned char len = 0;
-        unsigned char rxBuf[8];
+        // 割り込み原因を確認してデータを読み出す
+        while (CAN0.checkReceive() == CAN_MSGAVAIL) {
+            long unsigned int rxId;
+            unsigned char len = 0;
+            unsigned char rxBuf[8];
 
-        CAN0.readMsgBuf(&rxId, &len, rxBuf);
+            CAN0.readMsgBuf(&rxId, &len, rxBuf);
 
-        // Cコードの printf フォーマットに合わせて表示
-        Serial.print("recv 0x");
-        Serial.print(rxId, HEX);
-        Serial.print(": ");
-        for (byte i = 0; i < len; i++) {
-            if (rxBuf[i] < 0x10) Serial.print("0");
-            Serial.print(rxBuf[i], HEX);
-            Serial.print(" ");
+            // Cコードの printf フォーマットに合わせて表示
+            Serial.print("recv 0x");
+            Serial.print(rxId, HEX);
+            Serial.print(": ");
+            for (byte i = 0; i < len; i++) {
+                if (rxBuf[i] < 0x10) Serial.print("0");
+                Serial.print(rxBuf[i], HEX);
+                Serial.print(" ");
+            }
+            Serial.println();
         }
-        Serial.println();
-    }
     }
 
     // --- 送信処理 (Cコードの main whileループ に相当) ---
