@@ -1,0 +1,37 @@
+# RP2350 slcan udev ルール
+# Raspberry Pi Pico 2 + XL2515 を CANable互換として自動セットアップ
+# ビットレート: -s8 (1Mbit/s)  必要に応じて変更してください
+#
+# ============================================================
+# 使い方:
+#   1. 下記の "YOUR_SERIAL_HERE" を実際のシリアル番号に書き換えてください
+#      シリアル番号の確認方法:
+#        $ sudo dmesg | grep -A5 "Pico 2"
+#        → SerialNumber: XXXXXXXXXXXXXXXX の値を使います
+#
+#   2. このファイルを /etc/udev/rules.d/ にコピーしてルールをリロード:
+#        $ sudo cp 99-rp2350-can.rules /etc/udev/rules.d/
+#        $ sudo udevadm control --reload-rules
+#
+#   3. Pico 2 を差し直せば自動で can1 が立ち上がります
+#
+# ============================================================
+# 複数台のPico 2を使う場合:
+#   方法A: シリアル番号ごとにルールを追加（推奨）
+#     → 下記のルールをコピーして ATTRS{serial} と can名を変えて追記
+#     例: 2台目を can2 にする場合
+#       ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000f", ATTRS{serial}=="2ND_SERIAL_HERE", \
+#           RUN+="... /usr/bin/slcand -o -c -s8 /dev/%k can2 ..."
+#
+#   方法B: シリアル番号のチェックを外す（すべてのPico 2に適用）
+#     → ATTRS{serial}=="..." の部分を削除してください
+#     ※ 注意: slcanファームウェアが入っていないPicoにも適用されてしまいます
+# ============================================================
+
+# 挿入時の処理
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000f", ATTRS{serial}=="YOUR_SERIAL_HERE", \
+    RUN+="/usr/bin/systemd-run --unit=rp2350-can-bind-%k --no-block --property=RemainAfterExit=yes /bin/sh -c '/sbin/modprobe slcan && /usr/bin/slcand -o -c -s8 /dev/%k can1 && /usr/bin/sleep 1 && /usr/bin/ip link set up can1'"
+
+# 引き抜いた時の処理 (これがないと次回の接続で名前が衝突します)
+ACTION=="remove", SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000f", ATTRS{serial}=="YOUR_SERIAL_HERE", \
+    RUN+="/usr/bin/systemctl stop rp2350-can-bind-%k"
