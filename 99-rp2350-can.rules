@@ -20,7 +20,7 @@
 #   方法A: シリアル番号ごとにルールを追加（推奨）
 #     → 下記のルールをコピーして ATTRS{serial} と can名を変えて追記
 #     例: 2台目を can2 にする場合
-#       ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000f", ATTRS{serial}=="2ND_SERIAL_HERE", \
+#       ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="1234", ATTRS{idProduct}=="5678", ATTRS{serial}=="2ND_SERIAL_HERE", \
 #           RUN+="... /usr/bin/slcand -o -c -s8 /dev/%k can2 ..."
 #
 #   方法B: シリアル番号のチェックを外す（すべてのPico 2に適用）
@@ -28,10 +28,11 @@
 #     ※ 注意: slcanファームウェアが入っていないPicoにも適用されてしまいます
 # ============================================================
 
-# 挿入時の処理
-ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000f", ATTRS{serial}=="YOUR_SERIAL_HERE", \
+# 挿入時の処理 (PlatformIO等から隠すために ID_MM_PORT_IGNORE を付与し、さらに dialout グループ外にする)
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000f", ATTRS{serial}=="0591D1D9EE1BC575", \
+    ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_PORT_IGNORE}="1", GROUP="root", MODE="0660", \
     RUN+="/usr/bin/systemd-run --unit=rp2350-can-bind-%k --no-block --property=RemainAfterExit=yes /bin/sh -c '/sbin/modprobe slcan && /usr/bin/slcand -o -c -s8 /dev/%k can1 && /usr/bin/sleep 1 && /usr/bin/ip link set up can1'"
 
 # 引き抜いた時の処理 (これがないと次回の接続で名前が衝突します)
-ACTION=="remove", SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000f", ATTRS{serial}=="YOUR_SERIAL_HERE", \
+ACTION=="remove", SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000f", ATTRS{serial}=="0591D1D9EE1BC575", \
     RUN+="/usr/bin/systemctl stop rp2350-can-bind-%k"
